@@ -23,8 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Ensure script has execute permissions
-RUN chmod +x start.sh
+# Ensure script has execute permissions and proper line endings
+RUN chmod +x start.sh && \
+    sed -i 's/\r$//' start.sh
 
 EXPOSE $PORT
 
