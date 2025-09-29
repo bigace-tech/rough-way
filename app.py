@@ -1023,7 +1023,7 @@ def index():
             return redirect(url_for('bot_error_handler'))
 
         oauth_url = generate_microsoft_oauth_url()
-        session.clear()
+        # session.clear() # This line is causing the issue
         return render_template("index.html", oauth_url=oauth_url)
             
     except Exception as e:
