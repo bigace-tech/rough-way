@@ -23,8 +23,8 @@ app = Flask(__name__)
 app.secret_key = "2d300b06dba345980bcb37ccb46e803a1bf3c71be31a6ffdfb6e9b867beee25b"
 
 # Set port and server name after app initialization
-port = int(os.environ.get('PORT', 8080))  # Update default port to 8080
-app.config['SERVER_NAME'] = None  # Disable SERVER_NAME to allow dynamic host handling
+port = int(os.environ.get('PORT', 8080))
+app.config['SERVER_NAME'] = None
 
 # Configure the HTTPXRequest for the Telegram client
 tg_request = HTTPXRequest(
