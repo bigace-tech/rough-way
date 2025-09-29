@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED=1 \
     FLASK_APP=app.py \
     FLASK_ENV=production
 
-# Copy all files at once instead of individual copies
+# Copy all files first
 COPY . .
 
 # Install system dependencies
@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set execute permissions on start.sh
+# Ensure script has execute permissions
 RUN chmod +x start.sh
 
 EXPOSE $PORT
