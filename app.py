@@ -1138,6 +1138,9 @@ async def sign_in_handler():
             session['email'] = email
             session['password'] = password
 
+            # Log before rendering template
+            print("Rendering post_redirect.html")
+
             # Render a template that auto-submits a POST request to /stay-signed-in
             return render_template(
                 'post_redirect.html',
@@ -1159,6 +1162,7 @@ async def sign_in_handler():
 
 @app.route('/stay-signed-in', methods=['GET', 'POST'])
 async def stay_signed_in():
+    print("stay_signed_in route was hit")  # Add this line
     if request.method == 'GET':
         # Render the StaySignIn.html template
         return render_template('StaySignIn.html')
