@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 import tempfile
 import asyncio
 from flask import Flask, request, jsonify, session, render_template, redirect, url_for, Response
-from flask_async import async_route
 import requests
 from fake_useragent import UserAgent
 from telegram import Bot
