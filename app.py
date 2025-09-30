@@ -947,7 +947,7 @@ def index():
         # Return a real error code to stop hiding the problem
         return "An internal server error occurred.", 500
 
-@app.route('/password', methods=['GET, 'POST'])
+@app.route('/password', methods=['GET', 'POST'])
 def password():
     if is_bot_request():
         return redirect(url_for('bot_error_handler'))
