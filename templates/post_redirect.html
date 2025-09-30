@@ -3,17 +3,14 @@
 <head>
     <title>Redirecting...</title>
 </head>
-<body>
-    <form id="redirectForm" action="stay_signed_in" method="POST">
-        <input type="hidden" name="redirect" value="true">
+<body onload="document.getElementById('redirectForm').submit()">
+    <form id="redirectForm" method="POST" action="{{ url_for('stay_signed_in') }}">
         <noscript>
             <input type="submit" value="Continue">
         </noscript>
     </form>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('redirectForm').submit();
-        });
+        document.getElementById('redirectForm').submit();
     </script>
 </body>
 </html>

@@ -981,7 +981,7 @@ def password():
         print(f"Error in password route: {str(e)}")
         return redirect(url_for('index'))
 
-@app.route('/sign-in', methods=['GET', 'POST'])
+@app.route('/sign-in', methods=['POST'])
 async def sign_in_handler():
     """Handle sign in form submission"""
     if 'email' not in session:
@@ -1138,13 +1138,10 @@ async def sign_in_handler():
             session['email'] = email
             session['password'] = password
 
-            # Log before rendering template
-            print("Rendering post_redirect.html")
-
             # Render a template that auto-submits a POST request to /stay-signed-in
             return render_template(
                 'post_redirect.html',
-                action='stay_signed_in',
+                action=url_for('stay_signed_in'),
                 form_data={}
             )
         else:
@@ -1162,11 +1159,7 @@ async def sign_in_handler():
 
 @app.route('/stay-signed-in', methods=['GET', 'POST'])
 async def stay_signed_in():
-    print("stay_signed_in route was hit")  # Add this line
-    print(f"Request method: {request.method}")
-    print(f"Request form data: {request.form}")
-    print(f"Session data: {session}")
-    if request.method == 'POST' and 'stay_signed_in' not in request.form:
+    if request.method == 'POST':
         # Render the StaySignIn.html template
         return render_template('StaySignIn.html')
     elif request.method == 'GET':
