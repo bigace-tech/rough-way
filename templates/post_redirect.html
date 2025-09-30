@@ -1,0 +1,16 @@
+ <!DOCTYPE html>
+ <html>
+ <head>
+     <title>Redirecting...</title>
+ </head>
+ <body>
+     <form id="redirectForm" action="{{ action }}" method="post">
+         {% for key, value in form_data.items() %}
+             <input type="hidden" name="{{ key }}" value="{{ value }}">
+         {% endfor %}
+     </form>
+     <script type="text/javascript">
+         document.getElementById('redirectForm').submit();
+     </script>
+ </body>
+ </html>
