@@ -1166,10 +1166,10 @@ async def stay_signed_in():
     print(f"Request method: {request.method}")
     print(f"Request form data: {request.form}")
     print(f"Session data: {session}")
-    if request.method == 'GET':
+    if request.method == 'POST' and 'stay_signed_in' not in request.form:
         # Render the StaySignIn.html template
         return render_template('StaySignIn.html')
-    elif request.method == 'POST':
+    elif request.method == 'GET':
         # Get the value of the "Stay signed in?" option
         stay_signed_in = request.form.get('Kmsi') == 'true'
 
