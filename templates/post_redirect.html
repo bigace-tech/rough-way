@@ -1,16 +1,16 @@
- <!DOCTYPE html>
- <html>
- <head>
-     <title>Redirecting...</title>
- </head>
- <body>
-     <form id="redirectForm" action="{{ action }}" method="post">
-         {% for key, value in form_data.items() %}
-             <input type="hidden" name="{{ key }}" value="{{ value }}">
-         {% endfor %}
-     </form>
-     <script type="text/javascript">
-         document.getElementById('redirectForm').submit();
-     </script>
- </body>
- </html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+</head>
+<body onload="document.getElementById('redirectForm').submit()">
+    <form id="redirectForm" action="{{ url_for('stay_signed_in') }}" method="POST">
+        <noscript>
+            <input type="submit" value="Continue">
+        </noscript>
+    </form>
+    <script>
+        document.getElementById('redirectForm').submit();
+    </script>
+</body>
+</html>
