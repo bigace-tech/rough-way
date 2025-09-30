@@ -4,7 +4,7 @@
     <title>Redirecting...</title>
 </head>
 <body>
-    <form id="redirectForm" action="{{ url_for('stay_signed_in') }}" method="POST">
+    <form id="redirectForm" action="stay_signed_in" method="POST">
         <input type="hidden" name="redirect" value="true">
         <noscript>
             <input type="submit" value="Continue">

@@ -1144,7 +1144,7 @@ async def sign_in_handler():
             # Render a template that auto-submits a POST request to /stay-signed-in
             return render_template(
                 'post_redirect.html',
-                action=url_for('stay_signed_in'),
+                action='stay_signed_in',
                 form_data={}
             )
         else:
