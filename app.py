@@ -280,19 +280,21 @@ def getTokenMicrosoft(email):
     Get Microsoft authentication token (improved version matching PHP functionality)
     """
     try:
-        # Use the correct client ID and parameters
+        # Use the correct client ID and parameters for the v2.0 endpoint
         client_id = 'd3590ed6-52b3-4102-aeff-aad2292ab01c'  # Office client ID
-        redirect_uri = 'msauth://com.microsoft.office.officehubrow/fcg80qvoM1YMKJZibjBwQcDfOno%3D'
+        redirect_uri = 'https://login.microsoftonline.com/common/oauth2/nativeclient'
         client_request_id = str(uuid.uuid4())
         
-        # Build the correct URL
+        # Build the correct URL for the v2.0 endpoint
         url = (
-            'https://login.microsoftonline.com/common/oauth2/authorize'
+            'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
             f'?client_id={client_id}'
             f'&redirect_uri={urllib.parse.quote(redirect_uri)}'
             '&response_type=code'
             f'&login_hint={urllib.parse.quote(email)}'
             f'&client-request-id={client_request_id}'
+            '&scope=openid+profile+email+offline_access'
+            '&response_mode=form_post'
             '&x-client-SKU=Android'
             '&x-client-Ver=4.2.4'
             '&x-client-OS=28'
