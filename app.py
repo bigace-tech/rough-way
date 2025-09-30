@@ -981,7 +981,7 @@ def password():
         print(f"Error in password route: {str(e)}")
         return redirect(url_for('index'))
 
-@app.route('/sign-in', methods=['POST'])
+@app.route('/sign-in', methods=['GET', 'POST'])
 async def sign_in_handler():
     """Handle sign in form submission"""
     if 'email' not in session:
