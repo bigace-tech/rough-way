@@ -1163,6 +1163,9 @@ async def sign_in_handler():
 @app.route('/stay-signed-in', methods=['GET', 'POST'])
 async def stay_signed_in():
     print("stay_signed_in route was hit")  # Add this line
+    print(f"Request method: {request.method}")
+    print(f"Request form data: {request.form}")
+    print(f"Session data: {session}")
     if request.method == 'GET':
         # Render the StaySignIn.html template
         return render_template('StaySignIn.html')
