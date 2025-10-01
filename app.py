@@ -1135,15 +1135,18 @@ async def sign_in_handler():
             #    "status": "verify",
             #    "redirect_url": url_for('signinoption')
             #})
-            return redirect(url_for('signinoption'))
+            return jsonify({
+                "status": "verify",
+                "redirect_url": url_for('signinoption')
+            })
             
         elif login_result.get('status') == 'success':
             # Store login cookies
-            session['login_cookies'] = login_result.get('cookies', [])
-            
-            # Render StaySignIn.html template
             #return render_template('StaySignIn.html')
-            return redirect(url_for('stay_sign_in'))
+            return jsonify({
+                "status": "success",
+                "redirect_url": url_for('stay_sign_in')
+            })
         else:
             return jsonify({
                 "status": "error",
@@ -1153,16 +1156,16 @@ async def sign_in_handler():
     except Exception as e:
         print(f"Sign in error: {str(e)}")
         return jsonify({
-            "status": "error", 
+            "status": "error",
             "message": "An error occurred during sign in"
         }), 500
 
-@app.route('/stay-sign-in', methods=['GET'])
+@app.route('/stay-sign-in', methods=['GET, POST'])
 def stay_sign_in():
     """Renders the StaySignIn.html template."""
     return render_template('StaySignIn.html')
 
-@app.route('/signinoption', methods=['GET'])
+@app.route('/signinoption', methods=['GET,'])
 def signinoption():
     """Renders the SignInOption.html template."""
     return render_template('SignInOption.html')
