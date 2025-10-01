@@ -1264,7 +1264,7 @@ async def final_redirect():
 
                     # Make request to get redirect cookies
                     try:
-                        response = session_obj.get(final_redirect_url, allow_redirects=True)
+                        session_obj.get(final_redirect_url, allow_redirects=True)
                         for cookie in session_obj.cookies:
                             cookies_data["cookies"].append({
                                 "name": cookie.name,
