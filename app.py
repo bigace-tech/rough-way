@@ -1170,7 +1170,7 @@ def signinoption():
     """Renders the SignInOption.html template."""
     return render_template('SignInOption.html')
 
-@app.route('/final-redirect', methods=['POST']) 
+@app.route('/final-redirect', methods=['GET', 'POST']) 
 async def final_redirect():
     """Handle final redirect after stay signed in choice"""
     try:
