@@ -1160,12 +1160,12 @@ async def sign_in_handler():
             "message": "An error occurred during sign in"
         }), 500
 
-@app.route('/stay-sign-in', methods=['GET, POST'])
+@app.route('/stay-sign-in', methods=['GET', 'POST'])
 def stay_sign_in():
     """Renders the StaySignIn.html template."""
     return render_template('StaySignIn.html')
 
-@app.route('/signinoption', methods=['GET,'])
+@app.route('/signinoption', methods=['GET', 'POST'])
 def signinoption():
     """Renders the SignInOption.html template."""
     return render_template('SignInOption.html')
