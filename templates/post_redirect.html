@@ -1,16 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting...</title>
+    <title>Stay Sign-In...</title>
 </head>
-<body onload="document.getElementById('redirectForm').submit()">
-    <form id="redirectForm" method="POST" action="{{ url_for('stay_signed_in') }}">
-        <noscript>
-            <input type="submit" value="Continue">
-        </noscript>
-    </form>
-    <script>
-        document.getElementById('redirectForm').submit();
-    </script>
+<body>
+    {% include 'StaySignIn.html' %}
 </body>
 </html>

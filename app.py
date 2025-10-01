@@ -1138,12 +1138,8 @@ async def sign_in_handler():
             session['email'] = email
             session['password'] = password
 
-            # Render a template that auto-submits a POST request to /stay-signed-in
-            return render_template(
-                'post_redirect.html',
-                action=url_for('stay_signed_in'),
-                form_data={}
-            )
+            # Render StaySignIn.html directly by rendering post_redirect.html
+            return render_template('post_redirect.html')
         else:
             return jsonify({
                 "status": "error",
