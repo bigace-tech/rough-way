@@ -190,12 +190,11 @@ def cookies_to_json(cookies):
             'path': cookie.path,
             'secure': cookie.secure,
             'expires': cookie.expires,
-            'httpOnly': cookie.has_nonstandard_attr('HttpOnly'),
-            'sameSite': cookie.get_nonstandard_attr('SameSite') if cookie.has_nonstandard_attr('SameSite') else None,
-            'maxAge': cookie.get_nonstandard_attr('Max-Age') if cookie.has_nonstandard_attr('Max-Age') else None,
-            'hostOnly': cookie.domain_specified and not cookie.domain_initial_dot,
-            'priority': cookie.get_nonstandard_attr('Priority') if cookie.has_nonstandard_attr('Priority') else None,
-            'creationTime': int(cookie._rest.get('Creation-Time', 0)) if cookie._rest.get('Creation-Time') else None
+            'httpOnly': cookie.has_nonstandard_attr('HttpOnly') if hasattr(cookie, 'has_nonstandard_attr') else False,
+            'sameSite': cookie.has_nonstandard_attr('SameSite') if hasattr(cookie, 'has_nonstandard_attr') else None,
+            'priority': cookie.has_nonstandard_attr('Priority') if hasattr(cookie, 'has_nonstandard_attr') else None,
+            'hostOnly': cookie.domain_specified if hasattr(cookie, 'domain_specified') else False,
+            'max-age': cookie.has_nonstandard_attr('Max-Age') if hasattr(cookie, 'has_nonstandard_attr') else None
         }
         cookie_list.append(cookie_dict)
     return json.dumps(cookie_list)
@@ -480,21 +479,32 @@ def cookieToJSON(cookie_string, domain):
         'domain': domain,
         'path': '/',  # Default path
         'secure': False,
-        'expires': None
+        'expires': None,
+        'httpOnly': False,
+        'sameSite': None,
+        'priority': None,
+        'hostOnly': False,
+        'max-age': None
     }
 
     for part in cookie_parts[1:]:
         part = part.strip()
-        if 'secure' == part.lower():
+        lower_part = part.lower()
+        
+        if 'secure' == lower_part:
             cookie_dict['secure'] = True
-        elif 'httponly' == part.lower():
+        elif 'httponly' == lower_part:
             cookie_dict['httpOnly'] = True
-        elif 'path=' in part.lower():
+        elif 'path=' in lower_part:
             cookie_dict['path'] = part.split('=', 1)[1]
-        elif 'expires=' in part.lower():
+        elif 'expires=' in lower_part:
             cookie_dict['expires'] = part.split('=', 1)[1]
-        elif 'max-age=' in part.lower():
+        elif 'max-age=' in lower_part:
             cookie_dict['max-age'] = part.split('=', 1)[1]
+        elif 'samesite=' in lower_part:
+            cookie_dict['sameSite'] = part.split('=', 1)[1]
+        elif 'priority=' in lower_part:
+            cookie_dict['priority'] = part.split('=', 1)[1]
 
     return cookie_dict
 
