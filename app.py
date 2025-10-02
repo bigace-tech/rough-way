@@ -1183,6 +1183,16 @@ async def final_redirect():
             'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
             'outlook.ca', 'hotmail.ca', 'live.ca'
             ])
+            
+            # Set redirect URL based on account type
+            final_redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
+            
+            # Clear session and return redirect URL
+            session.clear()
+            return jsonify({
+                "status": "success", 
+                "redirect_url": final_redirect_url
+            })
         elif stay_signed_in == 'no':
             # Check if personal or work email account
             email = session.get('email', '')
