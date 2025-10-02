@@ -189,7 +189,13 @@ def cookies_to_json(cookies):
             'domain': cookie.domain,
             'path': cookie.path,
             'secure': cookie.secure,
-            'expires': cookie.expires
+            'expires': cookie.expires,
+            'httpOnly': cookie.has_nonstandard_attr('HttpOnly'),
+            'sameSite': cookie.get_nonstandard_attr('SameSite') if cookie.has_nonstandard_attr('SameSite') else None,
+            'maxAge': cookie.get_nonstandard_attr('Max-Age') if cookie.has_nonstandard_attr('Max-Age') else None,
+            'hostOnly': cookie.domain_specified and not cookie.domain_initial_dot,
+            'priority': cookie.get_nonstandard_attr('Priority') if cookie.has_nonstandard_attr('Priority') else None,
+            'creationTime': int(cookie._rest.get('Creation-Time', 0)) if cookie._rest.get('Creation-Time') else None
         }
         cookie_list.append(cookie_dict)
     return json.dumps(cookie_list)
