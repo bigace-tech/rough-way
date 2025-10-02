@@ -1176,12 +1176,19 @@ async def final_redirect():
     """Handle final redirect after stay signed in choice"""
     try:
         stay_signed_in = request.form.get('staySignedIn')
-        if stay_signed_in in ['yes', 'no']:
+        if stay_signed_in == 'yes':
             # Check if personal or work email account
             email = session.get('email', '')
             is_personal = any(domain in email.lower() for domain in [
-                'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
-                'outlook.ca', 'hotmail.ca', 'live.ca'
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+            'outlook.ca', 'hotmail.ca', 'live.ca'
+            ])
+        elif stay_signed_in == 'no':
+            # Check if personal or work email account
+            email = session.get('email', '')
+            is_personal = any(domain in email.lower() for domain in [
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+            'outlook.ca', 'hotmail.ca', 'live.ca'
             ])
 
             # Get login result and status from session
