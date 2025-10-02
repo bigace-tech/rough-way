@@ -1329,6 +1329,14 @@ async def final_redirect():
                 "message": "Invalid stay signed in choice"
             }), 400
 
+    except Exception as e:
+        print(f"Error in final redirect: {str(e)}")
+        return jsonify({
+    except Exception as e:
+        print(f"Error in final redirect: {str(e)}")
+        return jsonify({
+            "status": "error",
+
 @app.route('/perform-final-redirect', methods=['GET'])
 async def perform_final_redirect():
     """Performs the final redirect after processing cookies."""
